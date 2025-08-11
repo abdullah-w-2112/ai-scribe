@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered Medical Scribe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background: linear-gradient(135deg, rgba(78, 84, 200, 0.95), rgba(143, 148, 251, 0.8));
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .record-toggle {
+            position: relative;
+            padding: 20px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-family: 'Noto Sans', sans-serif;
+            min-width: 200px;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .record-toggle.ready {
+            background: linear-gradient(45deg, #8f94fb, #4e54c8);
+            color: white;
+            box-shadow: 0 10px 30px rgba(143, 148, 251, 0.4);
+        }
+
+        .record-toggle.ready:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(143, 148, 251, 0.5);
+        }
+
+        .record-toggle.recording {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            animation: recordingPulse 2s infinite;
+        }
+
+        @keyframes recordingPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+            }
+        }
+
+        .record-toggle:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+            animation: none !important;
+        }
+
+        .mic-icon {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            transition: transform 0.3s ease;
+        }
+
+        .recording .mic-icon {
+            animation: micPulse 1s infinite alternate;
+        }
+
+        @keyframes micPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .content-grid.with-summary {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .output-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .output-section:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            fill: #ffffff;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333333;
+            font-family: 'Noto Sans', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #8f94fb;
+            box-shadow: 0 0 20px rgba(143, 148, 251, 0.3);
+        }
+
+        textarea::placeholder {
+            color: rgba(51, 51, 51, 0.6);
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: typingDots 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingDots {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .summary-section {
+            display: none;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .summary-section.visible {
+            display: block;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .summary-loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .summary-loading.active {
+            display: flex;
+        }
+
+        .brain-loader {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .brain-loader::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top: 4px solid #8f94fb;
+            animation: brainSpin 1s linear infinite;
+        }
+
+        .brain-loader::after {
+            content: '🧠';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            animation: brainPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes brainSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes brainPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8f94fb, #4e54c8);
+            border-radius: 2px;
+            animation: progressFill 3s ease-in-out infinite;
+        }
+
+        @keyframes progressFill {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .content-grid.with-summary {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+
+            .record-toggle {
+                padding: 15px 30px;
+                font-size: 16px;
+                min-width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Powered Medical Scribe</h1>
+            <p class="subtitle">Streamline your clinical documentation with intelligent transcription</p>
+        </div>
+
+        <div class="controls">
+            <button id="recordToggle" class="record-toggle ready">
+                <svg class="mic-icon" viewBox="0 0 24 24">
+                    <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                    <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
+                    <line x1="12" x2="12" y1="19" y2="22"/>
+                    <line x1="8" x2="16" y1="22" y2="22"/>
+                </svg>
+                <span id="buttonText">Start Recording</span>
+            </button>
+        </div>
+
+        <div class="status" id="status">Ready to record patient consultation</div>
+
+        <div class="content-grid" id="contentGrid">
+            <div class="output-section">
+                <div class="section-header">
+                    <svg class="section-icon" viewBox="0 0 24 24">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" x2="8" y1="13" y2="13"/>
+                        <line x1="16" x2="8" y1="17" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                    </svg>
+                    <h2>Clinical Notes</h2>
+                </div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <span>Transcribing</span>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+                <textarea id="transcription" readonly placeholder="Patient consultation will be transcribed here in real-time..."></textarea>
+            </div>
+
+            <div class="output-section summary-section" id="summarySection">
+                <div class="section-header">
+                    <svg class="section-icon" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" x2="8" y1="13" y2="13"/>
+                        <line x1="16" x2="8" y1="17" y2="17"/>
+                    </svg>
+                    <h2>Clinical Summary</h2>
+                </div>
+                
+                <div class="summary-loading" id="summaryLoading">
+                    <div class="brain-loader"></div>
+                    <div class="loading-text">Analyzing Clinical Data</div>
+                    <div class="loading-subtext">AI is processing your consultation notes...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <textarea id="summary" readonly placeholder="AI-generated clinical summary will appear here automatically..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const recordToggle = document.getElementById('recordToggle');
+        const buttonText = document.getElementById('buttonText');
+        const transcriptionText = document.getElementById('transcription');
+        const summaryText = document.getElementById('summary');
+        const statusDiv = document.getElementById('status');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const summarySection = document.getElementById('summarySection');
+        const summaryLoading = document.getElementById('summaryLoading');
+        const contentGrid = document.getElementById('contentGrid');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        // Simulate streaming text effect
+        function streamText(element, text, speed = 30) {
+            element.value = '';
+            let i = 0;
+            const timer = setInterval(() => {
+                if (i < text.length) {
+                    element.value += text.charAt(i);
+                    element.scrollTop = element.scrollHeight;
+                    i++;
+                } else {
+                    clearInterval(timer);
+                }
+            }, speed);
+        }
+
+        // Show summary section with animation
+        function showSummarySection() {
+            summarySection.classList.add('visible');
+            contentGrid.classList.add('with-summary');
+        }
+
+        // Auto-generate summary
+        async function generateSummary(transcription) {
+            showSummarySection();
+            summaryLoading.classList.add('active');
+            summaryText.style.display = 'none';
+            statusDiv.innerHTML = '<div class="spinner"></div> Generating clinical summary...';
+            
+            const formData = new FormData();
+            formData.append('transcription', transcription);
+
+            try {
+                const response = await fetch('http://0.0.0.0:8000/summarise', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Hide loading animation
+                    setTimeout(() => {
+                        summaryLoading.classList.remove('active');
+                        summaryText.style.display = 'block';
+                        streamText(summaryText, data.summary, 20);
+                        statusDiv.textContent = 'Clinical documentation complete';
+                    }, 2000); // Show loading for at least 2 seconds for effect
+                    
+                } else {
+                    const errorData = await response.json();
+                    summaryLoading.classList.remove('active');
+                    summaryText.style.display = 'block';
+                    statusDiv.textContent = `Error: ${errorData.detail}`;
+                }
+            } catch (error) {
+                summaryLoading.classList.remove('active');
+                summaryText.style.display = 'block';
+                statusDiv.textContent = 'Error during summary generation';
+                console.error('Summary error:', error);
+            }
+        }
+
+        // Toggle Recording
+        recordToggle.addEventListener('click', async () => {
+            if (!isRecording) {
+                // Start Recording
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        audioChunks = [];
+
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.mp3');
+
+                        typingIndicator.style.display = 'flex';
+                        statusDiv.innerHTML = '<div class="spinner"></div> Processing audio and transcribing...';
+
+                        try {
+                            const response = await fetch('http://0.0.0.0:8000/transcribe', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                typingIndicator.style.display = 'none';
+                                
+                                // Stream the transcription
+                                streamText(transcriptionText, data.transcription, 25);
+                                
+                                statusDiv.textContent = 'Transcription complete';
+                                
+                                // Auto-generate summary after transcription
+                                setTimeout(() => {
+                                    generateSummary(data.transcription);
+                                }, 1000);
+                                
+                            } else {
+                                const errorData = await response.json();
+                                typingIndicator.style.display = 'none';
+                                statusDiv.textContent = `Error: ${errorData.detail}`;
+                            }
+                        } catch (error) {
+                            typingIndicator.style.display = 'none';
+                            statusDiv.textContent = 'Error during transcription';
+                            console.error('Transcription error:', error);
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    
+                    // Update button appearance
+                    recordToggle.classList.remove('ready');
+                    recordToggle.classList.add('recording');
+                    buttonText.textContent = 'Stop Recording';
+                    
+                    transcriptionText.value = '';
+                    summaryText.value = '';
+                    summarySection.classList.remove('visible');
+                    contentGrid.classList.remove('with-summary');
+                    statusDiv.innerHTML = '<div class="spinner"></div> Recording consultation...';
+                    
+                } catch (error) {
+                    statusDiv.textContent = 'Could not access microphone. Please check permissions.';
+                    console.error('Error starting recording:', error);
+             }
+            } else {
+                // Stop Recording
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                // Update button appearance
+                recordToggle.classList.remove('recording');
+                recordToggle.classList.add('ready');
+                buttonText.textContent = 'Start Recording';
+                
+                statusDiv.innerHTML = '<div class="spinner"></div> Processing audio...';
+                
+                // Stop all audio tracks
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
